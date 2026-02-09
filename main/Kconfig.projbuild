@@ -35,7 +35,7 @@ config CUSTOM_ASSETS_FILE
 
 choice
     prompt "Default Language"
-    default LANGUAGE_ZH_CN
+    default LANGUAGE_ES_ES
     help
         Select device display language
 
@@ -119,7 +119,7 @@ endchoice
 
 choice BOARD_TYPE
     prompt "Board Type"
-    default BOARD_TYPE_BREAD_COMPACT_WIFI
+    default BOARD_TYPE_SPOTPEAR_ESP32_S3_1_28_BOX
     help
         Board type. 开发板类型
     config BOARD_TYPE_BREAD_COMPACT_WIFI
@@ -859,6 +859,35 @@ menu "TAIJIPAI_S3_CONFIG"
     default y
     help
         启动双声道
+endmenu
+
+menu "Web Display Server"
+    config ENABLE_WEB_DISPLAY_SERVER
+        bool "Enable Web Display Server"
+        default y
+        help
+            Enable HTTP+WebSocket server to provide web interface mirroring the LCD display.
+            Allows viewing display content from a web browser on the local network.
+            Consumes approximately 60KB Flash and 26KB RAM when enabled.
+
+    config WEB_DISPLAY_SERVER_PORT
+        int "Web Server Port"
+        depends on ENABLE_WEB_DISPLAY_SERVER
+        default 8080
+        range 1024 65535
+        help
+            TCP port number for the web display server.
+            Default is 8080. Access via http://[ESP32_IP]:8080
+
+    config WEB_DISPLAY_MAX_CLIENTS
+        int "Max WebSocket Clients"
+        depends on ENABLE_WEB_DISPLAY_SERVER
+        default 3
+        range 1 7
+        help
+            Maximum number of simultaneous WebSocket client connections.
+            Each client consumes approximately 2KB RAM.
+            Default is 3 clients.
 endmenu
 
 endmenu

@@ -724,6 +724,15 @@ endif()
 if (CONFIG_USE_ESP_BLUFI_WIFI_PROVISIONING)
     list(APPEND SOURCES "boards/common/blufi.cpp")
 endif ()
+
+# Add web display server if enabled
+if(CONFIG_ENABLE_WEB_DISPLAY_SERVER)
+    list(APPEND SOURCES
+        "web_display_server/web_display_server.cc"
+        "web_display_server/display_bridge.cc"
+    )
+    list(APPEND INCLUDE_DIRS "web_display_server")
+endif()
 # Select language directory according to Kconfig
 if(CONFIG_LANGUAGE_ZH_CN)
     set(LANG_DIR "zh-CN")
@@ -859,8 +868,20 @@ if(CONFIG_IDF_TARGET_ESP32S3)
     list(APPEND SOURCES "boards/common/esp32_camera.cc")
 endif()
 
+# Prepare embedded files list
+set(EMBED_FILES_LIST ${LANG_SOUNDS} ${COMMON_SOUNDS})
+
+# Add web display server assets if enabled
+if(CONFIG_ENABLE_WEB_DISPLAY_SERVER)
+    list(APPEND EMBED_FILES_LIST
+        "web_display_server/assets/index.html"
+        "web_display_server/assets/display.css"
+        "web_display_server/assets/display.js"
+    )
+endif()
+
 idf_component_register(SRCS ${SOURCES}
-                    EMBED_FILES ${LANG_SOUNDS} ${COMMON_SOUNDS}
+                    EMBED_FILES ${EMBED_FILES_LIST}
                     INCLUDE_DIRS ${INCLUDE_DIRS}
                     WHOLE_ARCHIVE
                     PRIV_REQUIRES

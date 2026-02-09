@@ -15,6 +15,9 @@
 #include <string>
 #include <chrono>
 
+// Forward declarations
+class DisplayBridge;
+
 class Theme {
 public:
     Theme(const std::string& name) : name_(name) {}
@@ -56,6 +59,7 @@ protected:
     Theme* current_theme_ = nullptr;
 
     friend class DisplayLockGuard;
+    friend class DisplayBridge;
     virtual bool Lock(int timeout_ms = 0) = 0;
     virtual void Unlock() = 0;
 };

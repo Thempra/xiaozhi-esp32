@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Monitor</title>
+    <link rel="stylesheet" href="/display.css">
+</head>
+<body>
+    <div id="app" class="theme-dark">
+        <div class="top-bar">
+            <div class="status-icons">
+                <span id="network-icon" class="icon">📶</span>
+                <span id="battery-icon" class="icon">🔋</span>
+                <span id="volume-icon" class="icon">🔊</span>
+            </div>
+            <div id="connection-status" class="connection-indicator disconnected">
+                <span class="dot"></span>
+                <span class="text">Disconnected</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="status-display" class="status-section">
+                <div class="status-text">Idle</div>
+            </div>
+
+            <div id="emotion-display" class="emotion-section">
+                <div class="emoji">😊</div>
+            </div>
+
+            <div id="chat-area" class="chat-section">
+                <div id="chat-messages" class="chat-messages">
+                    <!-- Messages will be inserted here -->
+                </div>
+            </div>
+
+            <div id="notification-display" class="notification hidden">
+                <span id="notification-text"></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="/display.js"></script>
+</body>
+</html>

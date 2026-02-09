@@ -17,6 +17,11 @@
 #include "device_state.h"
 #include "device_state_machine.h"
 
+#if CONFIG_ENABLE_WEB_DISPLAY_SERVER
+#include "web_display_server/web_display_server.h"
+#include "web_display_server/display_bridge.h"
+#endif
+
 // Main event bits
 #define MAIN_EVENT_SCHEDULE             (1 << 0)
 #define MAIN_EVENT_SEND_AUDIO           (1 << 1)
@@ -112,6 +117,11 @@ public:
     AecMode GetAecMode() const { return aec_mode_; }
     void PlaySound(const std::string_view& sound);
     AudioService& GetAudioService() { return audio_service_; }
+
+    /**
+     * Get the active display (bridge if web server is enabled, otherwise board display)
+     */
+    Display* GetDisplay();
     
     /**
      * Reset protocol resources (thread-safe)
@@ -135,6 +145,11 @@ private:
     std::string last_error_message_;
     AudioService audio_service_;
     std::unique_ptr<Ota> ota_;
+
+#if CONFIG_ENABLE_WEB_DISPLAY_SERVER
+    WebDisplayServer* web_display_server_ = nullptr;
+    DisplayBridge* display_bridge_ = nullptr;
+#endif
 
     bool has_server_time_ = false;
     bool aborted_ = false;

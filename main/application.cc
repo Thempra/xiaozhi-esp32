@@ -52,10 +52,31 @@ Application::~Application() {
         esp_timer_delete(clock_timer_handle_);
     }
     vEventGroupDelete(event_group_);
+
+#if CONFIG_ENABLE_WEB_DISPLAY_SERVER
+    if (display_bridge_) {
+        delete display_bridge_;
+        display_bridge_ = nullptr;
+    }
+    if (web_display_server_) {
+        web_display_server_->Stop();
+        delete web_display_server_;
+        web_display_server_ = nullptr;
+    }
+#endif
 }
 
 bool Application::SetDeviceState(DeviceState state) {
     return state_machine_.TransitionTo(state);
+}
+
+Display* Application::GetDisplay() {
+#if CONFIG_ENABLE_WEB_DISPLAY_SERVER
+    if (display_bridge_) {
+        return display_bridge_;
+    }
+#endif
+    return Board::GetInstance().GetDisplay();
 }
 
 void Application::Initialize() {
@@ -63,7 +84,25 @@ void Application::Initialize() {
     SetDeviceState(kDeviceStateStarting);
 
     // Setup the display
-    auto display = board.GetDisplay();
+    Display* display = board.GetDisplay();
+
+#if CONFIG_ENABLE_WEB_DISPLAY_SERVER
+    // Create WebDisplayServer and DisplayBridge, but don't start the server yet
+    // Server will be started when network is connected (in HandleNetworkConnectedEvent)
+    web_display_server_ = new WebDisplayServer();
+    display_bridge_ = new DisplayBridge(display, web_display_server_);
+    display = display_bridge_;
+
+    // Set callback to provide state for new clients
+    web_display_server_->SetGetStateCallback([this]() {
+        if (display_bridge_) {
+            return display_bridge_->GetFullStateJson();
+        }
+        return std::string("{\"type\":\"full_state\",\"data\":{}}");
+    });
+    ESP_LOGI("Application", "Web Display Server created, will start when network connects");
+#endif
+
     display->SetupUI();
     // Print board name/version info
     display->SetChatMessage("system", SystemInfo::GetUserAgent().c_str());
@@ -100,7 +139,7 @@ void Application::Initialize() {
 
     // Set network event callback for UI updates and network state handling
     board.SetNetworkEventCallback([this](NetworkEvent event, const std::string& data) {
-        auto display = Board::GetInstance().GetDisplay();
+        auto display = GetDisplay();
         
         switch (event) {
             case NetworkEvent::Scanning:
@@ -247,7 +286,7 @@ void Application::Run() {
 
         if (bits & MAIN_EVENT_CLOCK_TICK) {
             clock_ticks_++;
-            auto display = Board::GetInstance().GetDisplay();
+            auto display = GetDisplay();
             display->UpdateStatusBar();
         
             // Print debug info every 10 seconds
@@ -261,6 +300,17 @@ void Application::Run() {
 void Application::HandleNetworkConnectedEvent() {
     ESP_LOGI(TAG, "Network connected");
     auto state = GetDeviceState();
+
+#if CONFIG_ENABLE_WEB_DISPLAY_SERVER
+    // Start Web Display Server now that network is ready
+    if (web_display_server_ && !web_display_server_->IsRunning()) {
+        if (web_display_server_->Start(CONFIG_WEB_DISPLAY_SERVER_PORT)) {
+            ESP_LOGI(TAG, "Web Display Server started on port %d", CONFIG_WEB_DISPLAY_SERVER_PORT);
+        } else {
+            ESP_LOGE(TAG, "Failed to start Web Display Server");
+        }
+    }
+#endif
 
     if (state == kDeviceStateStarting || state == kDeviceStateWifiConfiguring) {
         // Network is ready, start activation
@@ -279,7 +329,7 @@ void Application::HandleNetworkConnectedEvent() {
     }
 
     // Update the status bar immediately to show the network state
-    auto display = Board::GetInstance().GetDisplay();
+    auto display = GetDisplay();
     display->UpdateStatusBar(true);
 }
 
@@ -291,8 +341,16 @@ void Application::HandleNetworkDisconnectedEvent() {
         protocol_->CloseAudioChannel();
     }
 
+#if CONFIG_ENABLE_WEB_DISPLAY_SERVER
+    // Stop Web Display Server when network is lost
+    if (web_display_server_ && web_display_server_->IsRunning()) {
+        web_display_server_->Stop();
+        ESP_LOGI(TAG, "Web Display Server stopped due to network disconnection");
+    }
+#endif
+
     // Update the status bar immediately to show the network state
-    auto display = Board::GetInstance().GetDisplay();
+    auto display = GetDisplay();
     display->UpdateStatusBar(true);
 }
 
@@ -304,7 +362,7 @@ void Application::HandleActivationDoneEvent() {
 
     has_server_time_ = ota_->HasServerTime();
 
-    auto display = Board::GetInstance().GetDisplay();
+    auto display = GetDisplay();
     std::string message = std::string(Lang::Strings::VERSION) + ota_->GetCurrentVersion();
     display->ShowNotification(message.c_str());
     display->SetChatMessage("system", "");
@@ -512,7 +570,7 @@ void Application::InitializeProtocol() {
     protocol_->OnAudioChannelClosed([this, &board]() {
         board.SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
         Schedule([this]() {
-            auto display = Board::GetInstance().GetDisplay();
+            auto display = GetDisplay();
             display->SetChatMessage("system", "");
             SetDeviceState(kDeviceStateIdle);
         });
@@ -641,7 +699,7 @@ void Application::ShowActivationCode(const std::string& code, const std::string&
 
 void Application::Alert(const char* status, const char* message, const char* emotion, const std::string_view& sound) {
     ESP_LOGW(TAG, "Alert [%s] %s: %s", emotion, status, message);
-    auto display = Board::GetInstance().GetDisplay();
+    auto display = GetDisplay();
     display->SetStatus(status);
     display->SetEmotion(emotion);
     display->SetChatMessage("system", message);
@@ -652,7 +710,7 @@ void Application::Alert(const char* status, const char* message, const char* emo
 
 void Application::DismissAlert() {
     if (GetDeviceState() == kDeviceStateIdle) {
-        auto display = Board::GetInstance().GetDisplay();
+        auto display = GetDisplay();
         display->SetStatus(Lang::Strings::STANDBY);
         display->SetEmotion("neutral");
         display->SetChatMessage("system", "");
