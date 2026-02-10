@@ -29,6 +29,8 @@ DisplayBridge::~DisplayBridge() {
 }
 
 void DisplayBridge::SetStatus(const char* status) {
+    ESP_LOGI("DisplayBridge", "SetStatus: %s", status ? status : "(null)");
+
     if (wrapped_display_) {
         wrapped_display_->SetStatus(status);
     }

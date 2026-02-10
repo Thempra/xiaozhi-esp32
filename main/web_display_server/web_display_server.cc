@@ -218,7 +218,7 @@ void WebDisplayServer::AddClient(int fd) {
     client.fd = fd;
     client.last_ping_time = esp_timer_get_time();
     clients_.push_back(client);
-    ESP_LOGI(TAG, "Client connected: fd=%d, total=%zu", fd, clients_.size());
+    ESP_LOGI(TAG, "Client connected: fd=%d, total=%d", fd, (int)clients_.size());
 }
 
 void WebDisplayServer::RemoveClient(int fd) {
@@ -228,7 +228,7 @@ void WebDisplayServer::RemoveClient(int fd) {
                              [fd](const WebSocketClient& c) { return c.fd == fd; });
     if (it != clients_.end()) {
         clients_.erase(it, clients_.end());
-        ESP_LOGI(TAG, "Client removed: fd=%d, total=%zu", fd, clients_.size());
+        ESP_LOGI(TAG, "Client removed: fd=%d, total=%d", fd, (int)clients_.size());
     }
 }
 
@@ -238,6 +238,8 @@ void WebDisplayServer::BroadcastToClients(const std::string& message) {
     }
 
     std::lock_guard<std::mutex> lock(clients_mutex_);
+
+    ESP_LOGI(TAG, "Broadcasting to %d clients, msg_len=%d", (int)clients_.size(), (int)message.length());
 
     httpd_ws_frame_t ws_pkt;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
@@ -258,6 +260,8 @@ void WebDisplayServer::BroadcastFullState(const std::string& json) {
 }
 
 void WebDisplayServer::BroadcastChatMessage(const std::string& role, const std::string& content) {
+    ESP_LOGI(TAG, "BroadcastChatMessage: role=%s, content_len=%d", role.c_str(), (int)content.length());
+
     // Escape JSON strings
     std::string escaped_content;
     for (char c : content) {
@@ -277,6 +281,7 @@ void WebDisplayServer::BroadcastChatMessage(const std::string& role, const std::
 }
 
 void WebDisplayServer::BroadcastStateUpdate(const std::string& field, const std::string& value) {
+    ESP_LOGI(TAG, "BroadcastStateUpdate: field=%s, value=%s", field.c_str(), value.c_str());
     std::string msg = "{\"type\":\"state_update\",\"field\":\"" + field +
                      "\",\"value\":\"" + value + "\"}";
     BroadcastToClients(msg);

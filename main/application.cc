@@ -73,7 +73,10 @@ bool Application::SetDeviceState(DeviceState state) {
 Display* Application::GetDisplay() {
 #if CONFIG_ENABLE_WEB_DISPLAY_SERVER
     if (display_bridge_) {
+        ESP_LOGI("Application", "GetDisplay: returning DisplayBridge");
         return display_bridge_;
+    } else {
+        ESP_LOGW("Application", "GetDisplay: display_bridge_ is NULL, returning Board display");
     }
 #endif
     return Board::GetInstance().GetDisplay();
@@ -403,7 +406,7 @@ void Application::CheckAssetsVersion() {
     assets_version_checked_ = true;
 
     auto& board = Board::GetInstance();
-    auto display = board.GetDisplay();
+    auto display = GetDisplay();
     auto& assets = Assets::GetInstance();
 
     if (!assets.partition_valid()) {
@@ -460,7 +463,7 @@ void Application::CheckNewVersion() {
 
     auto& board = Board::GetInstance();
     while (true) {
-        auto display = board.GetDisplay();
+        auto display = GetDisplay();
         display->SetStatus(Lang::Strings::CHECKING_NEW_VERSION);
 
         esp_err_t err = ota_->CheckVersion();
@@ -530,7 +533,7 @@ void Application::CheckNewVersion() {
 
 void Application::InitializeProtocol() {
     auto& board = Board::GetInstance();
-    auto display = board.GetDisplay();
+    auto display = GetDisplay();
     auto codec = board.GetAudioCodec();
 
     display->SetStatus(Lang::Strings::LOADING_PROTOCOL);
@@ -915,10 +918,10 @@ void Application::HandleStateChangedEvent() {
     clock_ticks_ = 0;
 
     auto& board = Board::GetInstance();
-    auto display = board.GetDisplay();
+    auto display = GetDisplay();
     auto led = board.GetLed();
     led->OnStateChanged();
-    
+
     switch (new_state) {
         case kDeviceStateUnknown:
         case kDeviceStateIdle:
@@ -1024,7 +1027,7 @@ void Application::Reboot() {
 
 bool Application::UpgradeFirmware(const std::string& url, const std::string& version) {
     auto& board = Board::GetInstance();
-    auto display = board.GetDisplay();
+    auto display = GetDisplay();
 
     std::string upgrade_url = url;
     std::string version_info = version.empty() ? "(Manual upgrade)" : version;
@@ -1137,7 +1140,7 @@ void Application::SetAecMode(AecMode mode) {
     aec_mode_ = mode;
     Schedule([this]() {
         auto& board = Board::GetInstance();
-        auto display = board.GetDisplay();
+        auto display = GetDisplay();
         switch (aec_mode_) {
         case kAecOff:
             audio_service_.EnableDeviceAec(false);
