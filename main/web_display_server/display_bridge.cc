@@ -12,6 +12,16 @@ DisplayBridge::DisplayBridge(Display* wrapped, WebDisplayServer* server)
         height_ = wrapped_display_->height();
         current_theme_ = wrapped_display_->GetTheme();
     }
+
+    // Initialize state with defaults
+    std::lock_guard<std::mutex> lock(state_mutex_);
+    current_state_.status = "Idle";
+    current_state_.emotion = "neutral";
+    current_state_.theme = current_theme_ ? current_theme_->name() : "dark";
+    current_state_.battery_level = -1;
+    current_state_.battery_charging = false;
+    current_state_.network_status = "unknown";
+    current_state_.volume = -1;
 }
 
 DisplayBridge::~DisplayBridge() {
@@ -58,7 +68,7 @@ void DisplayBridge::SetEmotion(const char* emotion) {
     }
 
     std::lock_guard<std::mutex> lock(state_mutex_);
-    current_state_.emotion = emotion ? emotion : "";
+    current_state_.emotion = emotion ? emotion : "neutral";
 
     if (web_server_) {
         web_server_->BroadcastStateUpdate("emotion", current_state_.emotion);
@@ -229,4 +239,59 @@ std::string DisplayBridge::EscapeJson(const std::string& str) {
         }
     }
     return result;
+}
+
+std::string DisplayBridge::EmotionToEmoji(const std::string& emotion) {
+    // Map emotion names (used by LCD GIF files) to Unicode emojis for web display
+    if (emotion == "neutral" || emotion == "staticstate") return "😐";
+    if (emotion == "happy") return "😊";
+    if (emotion == "sleepy") return "😴";
+    if (emotion == "sad") return "😢";
+    if (emotion == "angry") return "😠";
+    if (emotion == "surprised") return "😮";
+    if (emotion == "confused") return "😕";
+    if (emotion == "thinking") return "🤔";
+    if (emotion == "love") return "😍";
+    if (emotion == "wink") return "😉";
+    if (emotion == "cry") return "😭";
+    if (emotion == "laugh") return "😂";
+    if (emotion == "cool") return "😎";
+    if (emotion == "excited") return "🤩";
+    if (emotion == "worried") return "😟";
+    if (emotion == "scared") return "😨";
+    if (emotion == "sick") return "🤒";
+    if (emotion == "dead") return "😵";
+    if (emotion == "robot") return "🤖";
+    if (emotion == "alien") return "👽";
+    if (emotion == "ghost") return "👻";
+    if (emotion == "poop") return "💩";
+    if (emotion == "fire") return "🔥";
+    if (emotion == "heart") return "❤️";
+    if (emotion == "star") return "⭐";
+    if (emotion == "check") return "✅";
+    if (emotion == "cross") return "❌";
+    if (emotion == "question") return "❓";
+    if (emotion == "exclamation") return "❗";
+    if (emotion == "warning" || emotion == "triangle_exclamation") return "⚠️";
+    if (emotion == "microchip_ai" || emotion == "microchip") return "🤖";
+    if (emotion == "music") return "🎵";
+    if (emotion == "speaker") return "🔊";
+    if (emotion == "mute") return "🔇";
+    if (emotion == "battery") return "🔋";
+    if (emotion == "wifi") return "📶";
+    if (emotion == "bluetooth") return "🔵";
+    if (emotion == "loading") return "⏳";
+    if (emotion == "success") return "✅";
+    if (emotion == "error") return "❌";
+
+    // If unknown, return the original string or a default emoji
+    if (emotion.empty()) return "😐";
+
+    // Check if it's already a Unicode emoji (starts with high surrogate or emoji range)
+    if (!emotion.empty() && (unsigned char)emotion[0] >= 0x80) {
+        return emotion;  // Already an emoji
+    }
+
+    // Default fallback
+    return "😐";
 }

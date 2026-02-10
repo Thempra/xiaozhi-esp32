@@ -126,6 +126,7 @@ class UIRenderer {
             status: document.getElementById('status-display').querySelector('.status-text'),
             emotion: document.getElementById('emotion-display').querySelector('.emoji'),
             chatMessages: document.getElementById('chat-messages'),
+            debugMessages: document.getElementById('debug-messages'),
             notification: document.getElementById('notification-display'),
             notificationText: document.getElementById('notification-text'),
             connectionStatus: document.getElementById('connection-status'),
@@ -140,7 +141,49 @@ class UIRenderer {
     }
 
     renderEmotion(emotion) {
-        this.elements.emotion.textContent = emotion;
+        // Map emotion names to Twemoji Unicode codes (same as LCD display uses)
+        const emotionToTwemoji = {
+            'neutral': '1f636',
+            'happy': '1f642',
+            'laughing': '1f606',
+            'funny': '1f602',
+            'sad': '1f614',
+            'angry': '1f620',
+            'crying': '1f62d',
+            'loving': '1f60d',
+            'embarrassed': '1f633',
+            'surprised': '1f62f',
+            'shocked': '1f631',
+            'thinking': '1f914',
+            'winking': '1f609',
+            'cool': '1f60e',
+            'relaxed': '1f60c',
+            'delicious': '1f924',
+            'kissy': '1f618',
+            'confident': '1f60f',
+            'sleepy': '1f634',
+            'silly': '1f61c',
+            'confused': '1f644',
+            // Additional common emotions
+            'staticstate': '1f636',
+            'microchip_ai': '1f916',  // robot face
+            'triangle_exclamation': '26a0',  // warning sign
+        };
+
+        const twemojiCode = emotionToTwemoji[emotion] || '1f636';  // default to neutral
+
+        // Clear previous content
+        this.elements.emotion.innerHTML = '';
+
+        // Create img element for Twemoji
+        const img = document.createElement('img');
+        img.src = `https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/72x72/${twemojiCode}.png`;
+        img.alt = emotion;
+        img.className = 'emoji-image';
+        img.style.width = '64px';
+        img.style.height = '64px';
+
+        this.elements.emotion.appendChild(img);
     }
 
     renderTheme(theme) {
@@ -149,33 +192,54 @@ class UIRenderer {
 
     renderMessages(messages) {
         this.elements.chatMessages.innerHTML = '';
+        this.elements.debugMessages.innerHTML = '';
         messages.forEach(msg => {
             this.addMessage(msg.role, msg.content);
         });
         this.scrollToBottom();
+        this.scrollDebugToBottom();
     }
 
     addMessage(role, content) {
+        if (role === 'system') {
+            // System messages go to debug panel (left)
+            this.addDebugMessage(content);
+        } else {
+            // User/Assistant messages go to chat panel (right)
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-message ${role}`;
+
+            const roleDiv = document.createElement('div');
+            roleDiv.className = 'message-role';
+            roleDiv.textContent = role;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+
+            msgDiv.appendChild(roleDiv);
+            msgDiv.appendChild(contentDiv);
+
+            this.elements.chatMessages.appendChild(msgDiv);
+            this.scrollToBottom();
+        }
+    }
+
+    addDebugMessage(content) {
         const msgDiv = document.createElement('div');
-        msgDiv.className = `chat-message ${role}`;
-
-        const roleDiv = document.createElement('div');
-        roleDiv.className = 'message-role';
-        roleDiv.textContent = role;
-
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'message-content';
-        contentDiv.textContent = content;
-
-        msgDiv.appendChild(roleDiv);
-        msgDiv.appendChild(contentDiv);
-
-        this.elements.chatMessages.appendChild(msgDiv);
-        this.scrollToBottom();
+        msgDiv.className = 'debug-message';
+        msgDiv.textContent = content;
+        this.elements.debugMessages.appendChild(msgDiv);
+        this.scrollDebugToBottom();
     }
 
     clearMessages() {
         this.elements.chatMessages.innerHTML = '';
+        this.elements.debugMessages.innerHTML = '';
+    }
+
+    scrollDebugToBottom() {
+        this.elements.debugMessages.scrollTop = this.elements.debugMessages.scrollHeight;
     }
 
     showNotification(message, duration = 3000) {

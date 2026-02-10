@@ -21,22 +21,36 @@
         </div>
 
         <div class="main-content">
-            <div id="status-display" class="status-section">
-                <div class="status-text">Idle</div>
-            </div>
-
-            <div id="emotion-display" class="emotion-section">
-                <div class="emoji">😊</div>
-            </div>
-
-            <div id="chat-area" class="chat-section">
-                <div id="chat-messages" class="chat-messages">
-                    <!-- Messages will be inserted here -->
+            <!-- Left column: Debug/System messages -->
+            <div class="left-column">
+                <div class="column-header">Debug / System</div>
+                <div id="debug-messages" class="debug-messages">
+                    <!-- Debug messages will be inserted here -->
                 </div>
             </div>
 
-            <div id="notification-display" class="notification hidden">
-                <span id="notification-text"></span>
+            <!-- Right column: LCD Display replica -->
+            <div class="right-column">
+                <div class="column-header">Display</div>
+                <div class="display-replica">
+                    <div id="status-display" class="status-section">
+                        <div class="status-text">Idle</div>
+                    </div>
+
+                    <div id="emotion-display" class="emotion-section">
+                        <div class="emoji">😊</div>
+                    </div>
+
+                    <div id="chat-area" class="chat-section">
+                        <div id="chat-messages" class="chat-messages">
+                            <!-- User/Assistant messages will be inserted here -->
+                        </div>
+                    </div>
+
+                    <div id="notification-display" class="notification hidden">
+                        <span id="notification-text"></span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

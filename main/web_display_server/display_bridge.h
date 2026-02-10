@@ -62,6 +62,7 @@ private:
     void UpdateNetworkStatus();
     void UpdateVolumeStatus();
     std::string EscapeJson(const std::string& str);
+    std::string EmotionToEmoji(const std::string& emotion);
 };
 
 #endif // DISPLAY_BRIDGE_H
