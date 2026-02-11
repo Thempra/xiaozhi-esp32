@@ -17,6 +17,7 @@
 #include "settings.h"
 #include "lvgl_theme.h"
 #include "lvgl_display.h"
+#include "wifi_manager.h"
 
 #define TAG "MCP"
 
@@ -120,6 +121,74 @@ void McpServer::AddCommonTools() {
             });
     }
 #endif
+
+    // Network tools (WiFi)
+    AddTool("self.network.get_wifi_info",
+        "Get detailed WiFi network information including SSID (network name), BSSID (router MAC address), IP address, netmask, and gateway.",
+        PropertyList(),
+        [](const PropertyList& properties) -> ReturnValue {
+            auto& wifi = WifiManager::GetInstance();
+            if (!wifi.IsConnected()) {
+                return std::string("{\"error\":\"Not connected to WiFi\"}");
+            }
+
+            cJSON* json = cJSON_CreateObject();
+            cJSON_AddStringToObject(json, "ssid", wifi.GetSsid().c_str());
+            cJSON_AddStringToObject(json, "bssid", wifi.GetBssid().c_str());
+            cJSON_AddStringToObject(json, "ip", wifi.GetIpAddress().c_str());
+            cJSON_AddStringToObject(json, "netmask", wifi.GetNetmask().c_str());
+            cJSON_AddStringToObject(json, "gateway", wifi.GetGateway().c_str());
+            cJSON_AddNumberToObject(json, "rssi", wifi.GetRssi());
+            cJSON_AddNumberToObject(json, "channel", wifi.GetChannel());
+
+            return json;
+        });
+
+    AddTool("self.network.get_ip",
+        "Get the device's IP address.",
+        PropertyList(),
+        [](const PropertyList& properties) -> ReturnValue {
+            auto& wifi = WifiManager::GetInstance();
+            if (!wifi.IsConnected()) {
+                return std::string("Not connected");
+            }
+            return wifi.GetIpAddress();
+        });
+
+    AddTool("self.network.scan_wifi",
+        "Scan for available WiFi networks. Returns a list of networks with SSID, signal strength (RSSI), channel, BSSID, and authentication mode.",
+        PropertyList(),
+        [](const PropertyList& properties) -> ReturnValue {
+            auto& wifi = WifiManager::GetInstance();
+            std::string scan_result = wifi.ScanNetworks();
+
+            // Parse JSON string to cJSON for proper formatting
+            cJSON* json = cJSON_Parse(scan_result.c_str());
+            if (json == nullptr) {
+                return scan_result;  // Return as string if parsing fails
+            }
+            return json;
+        });
+
+    // Battery tools
+    AddTool("self.battery.get_level",
+        "Get the battery level percentage and charging status.",
+        PropertyList(),
+        [&board](const PropertyList& properties) -> ReturnValue {
+            int level = 0;
+            bool charging = false;
+            bool discharging = false;
+
+            if (board.GetBatteryLevel(level, charging, discharging)) {
+                cJSON* json = cJSON_CreateObject();
+                cJSON_AddNumberToObject(json, "level", level);
+                cJSON_AddBoolToObject(json, "charging", charging);
+                cJSON_AddBoolToObject(json, "discharging", discharging);
+                return json;
+            }
+
+            return std::string("{\"error\":\"Battery information not available\"}");
+        });
 
     // Restore the original tools list to the end of the tools list
     tools_.insert(tools_.end(), original_tools.begin(), original_tools.end());
