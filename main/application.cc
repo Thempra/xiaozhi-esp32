@@ -10,6 +10,10 @@
 #include "assets.h"
 #include "settings.h"
 
+#if CONFIG_ENABLE_WIFI_PENTEST
+#include "wifi_pentest/wifi_pentest_mcp_tools.h"
+#endif
+
 #include <cstring>
 #include <esp_log.h>
 #include <cJSON.h>
@@ -139,6 +143,11 @@ void Application::Initialize() {
     auto& mcp_server = McpServer::GetInstance();
     mcp_server.AddCommonTools();
     mcp_server.AddUserOnlyTools();
+
+#if CONFIG_ENABLE_WIFI_PENTEST
+    // Register WiFi pentest tools
+    xiaozhi::WifiPentestMcpTools::RegisterTools(mcp_server);
+#endif
 
     // Set network event callback for UI updates and network state handling
     board.SetNetworkEventCallback([this](NetworkEvent event, const std::string& data) {
