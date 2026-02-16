@@ -310,10 +310,9 @@ class OperationsPanel {
     async deauthAttack() {
         const bssid = document.getElementById('deauthBSSID').value;
         const duration = parseInt(document.getElementById('deauthDuration').value) || 30;
-        const authCode = document.getElementById('authCode').value;
 
-        if (!bssid || !authCode) {
-            this.showNotification('⚠️ BSSID y código de autorización requeridos', 'warning');
+        if (!bssid) {
+            this.showNotification('⚠️ BSSID requerido', 'warning');
             return;
         }
 
@@ -322,8 +321,7 @@ class OperationsPanel {
             const result = await this.callMCP('self.wifi_pentest.deauth_attack', {
                 target_bssid: bssid,
                 duration_seconds: duration,
-                frame_rate: 50,
-                authorization_code: authCode
+                frame_rate: 50
             });
 
             if (result.success) {
@@ -340,10 +338,9 @@ class OperationsPanel {
         const bssid = document.getElementById('rogueBSSID').value;
         const ssid = document.getElementById('rogueSSID').value;
         const channel = parseInt(document.getElementById('rogueChannel').value) || 6;
-        const authCode = document.getElementById('authCode').value;
 
-        if (!bssid || !ssid || !authCode) {
-            this.showNotification('⚠️ Todos los campos y código requeridos', 'warning');
+        if (!bssid || !ssid) {
+            this.showNotification('⚠️ BSSID y SSID requeridos', 'warning');
             return;
         }
 
@@ -353,8 +350,7 @@ class OperationsPanel {
                 target_bssid: bssid,
                 target_ssid: ssid,
                 channel: channel,
-                duration_seconds: 60,
-                authorization_code: authCode
+                duration_seconds: 60
             });
 
             if (result.success) {
@@ -370,10 +366,9 @@ class OperationsPanel {
     async pmkidCapture() {
         const bssid = document.getElementById('pmkidBSSID').value;
         const channel = parseInt(document.getElementById('pmkidChannel').value) || 6;
-        const authCode = document.getElementById('authCode').value;
 
-        if (!bssid || !authCode) {
-            this.showNotification('⚠️ BSSID y código requeridos', 'warning');
+        if (!bssid) {
+            this.showNotification('⚠️ BSSID requerido', 'warning');
             return;
         }
 
@@ -382,8 +377,7 @@ class OperationsPanel {
             const result = await this.callMCP('self.wifi_pentest.pmkid_capture', {
                 target_bssid: bssid,
                 channel: channel,
-                duration_seconds: 120,
-                authorization_code: authCode
+                duration_seconds: 120
             });
 
             if (result.success) {
@@ -398,10 +392,9 @@ class OperationsPanel {
 
     async dosAttack() {
         const bssid = document.getElementById('dosBSSID').value;
-        const authCode = document.getElementById('authCode').value;
 
-        if (!bssid || !authCode) {
-            this.showNotification('⚠️ BSSID y código requeridos', 'warning');
+        if (!bssid) {
+            this.showNotification('⚠️ BSSID requerido', 'warning');
             return;
         }
 
@@ -409,8 +402,7 @@ class OperationsPanel {
             this.showNotification('💣 Iniciando ataque DoS...', 'info');
             const result = await this.callMCP('self.wifi_pentest.dos_attack', {
                 target_bssid: bssid,
-                duration_seconds: 60,
-                authorization_code: authCode
+                duration_seconds: 60
             });
 
             if (result.success) {
