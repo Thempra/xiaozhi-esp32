@@ -52,11 +52,6 @@
 
                 <!-- Pestaña Pentest -->
                 <div class="tab-pane" id="tab-pentest">
-                    <section class="op-section warning-section">
-                        <h3>⚠️ WiFi Penetration Testing</h3>
-                        <p class="warning-text">Uso autorizado únicamente.</p>
-                    </section>
-
                     <section class="op-section">
                         <button class="btn btn-primary btn-block" id="btnPentestScan">🎯 Escanear Targets</button>
                         <div id="pentestTargets" class="networks-list"></div>
@@ -70,6 +65,8 @@
                                 <input type="text" id="deauthBSSID" placeholder="BSSID" class="form-input">
                                 <input type="number" id="deauthDuration" placeholder="Seg" class="form-input" value="30">
                                 <button class="btn btn-danger btn-sm" id="btnDeauth">Ejecutar</button>
+                                <button class="btn btn-warning btn-sm" id="btnStopDeauth" style="display:none;">⏹️ Detener</button>
+                                <div id="deauthStatus" class="status-text"></div>
                             </div>
 
                             <div class="attack-card">
@@ -78,6 +75,8 @@
                                 <input type="text" id="rogueSSID" placeholder="SSID" class="form-input">
                                 <input type="number" id="rogueChannel" placeholder="Canal" class="form-input" value="6">
                                 <button class="btn btn-danger btn-sm" id="btnRogue">Ejecutar</button>
+                                <button class="btn btn-warning btn-sm" id="btnStopRogue" style="display:none;">⏹️ Detener</button>
+                                <div id="rogueStatus" class="status-text"></div>
                             </div>
 
                             <div class="attack-card">
@@ -85,19 +84,18 @@
                                 <input type="text" id="pmkidBSSID" placeholder="BSSID" class="form-input">
                                 <input type="number" id="pmkidChannel" placeholder="Canal" class="form-input" value="6">
                                 <button class="btn btn-danger btn-sm" id="btnPMKID">Ejecutar</button>
+                                <button class="btn btn-warning btn-sm" id="btnStopPMKID" style="display:none;">⏹️ Detener</button>
+                                <div id="pmkidStatus" class="status-text"></div>
                             </div>
 
                             <div class="attack-card">
                                 <h4>💣 DoS</h4>
                                 <input type="text" id="dosBSSID" placeholder="BSSID" class="form-input">
                                 <button class="btn btn-danger btn-sm" id="btnDoS">Ejecutar</button>
+                                <button class="btn btn-warning btn-sm" id="btnStopDoS" style="display:none;">⏹️ Detener</button>
+                                <div id="dosStatus" class="status-text"></div>
                             </div>
                         </div>
-                    </section>
-
-                    <section class="op-section">
-                        <button class="btn btn-warning btn-block" id="btnStopAttack">⏹️ Detener</button>
-                        <div id="attackStatus" class="status-box"></div>
                     </section>
 
                     <section class="op-section">

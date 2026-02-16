@@ -139,10 +139,13 @@ class OperationsPanel {
         // Pentest operations
         document.getElementById('btnPentestScan')?.addEventListener('click', () => this.pentestScan());
         document.getElementById('btnDeauth')?.addEventListener('click', () => this.deauthAttack());
+        document.getElementById('btnStopDeauth')?.addEventListener('click', () => this.stopDeauthAttack());
         document.getElementById('btnRogue')?.addEventListener('click', () => this.rogueAP());
+        document.getElementById('btnStopRogue')?.addEventListener('click', () => this.stopRogueAP());
         document.getElementById('btnPMKID')?.addEventListener('click', () => this.pmkidCapture());
+        document.getElementById('btnStopPMKID')?.addEventListener('click', () => this.stopPMKIDCapture());
         document.getElementById('btnDoS')?.addEventListener('click', () => this.dosAttack());
-        document.getElementById('btnStopAttack')?.addEventListener('click', () => this.stopAttack());
+        document.getElementById('btnStopDoS')?.addEventListener('click', () => this.stopDoSAttack());
         document.getElementById('btnExport')?.addEventListener('click', () => this.exportCapture());
 
         // Bluetooth operations
@@ -316,21 +319,49 @@ class OperationsPanel {
             return;
         }
 
+        // Show stop button, hide execute button
+        document.getElementById('btnDeauth').style.display = 'none';
+        document.getElementById('btnStopDeauth').style.display = 'inline-block';
+        document.getElementById('deauthStatus').textContent = '⏳ Ejecutando...';
+
         try {
             this.showNotification('💥 Iniciando ataque Deauth...', 'info');
-            const result = await this.callMCP('self.wifi_pentest.deauth_attack', {
+
+            // Start attack asynchronously
+            this.callMCP('self.wifi_pentest.deauth_attack', {
                 target_bssid: bssid,
                 duration_seconds: duration,
                 frame_rate: 50
+            }).then(result => {
+                // Attack completed
+                document.getElementById('btnDeauth').style.display = 'inline-block';
+                document.getElementById('btnStopDeauth').style.display = 'none';
+                document.getElementById('deauthStatus').textContent = `✅ Completado: ${result.frames_sent || 0} frames`;
+                this.showNotification('✅ Ataque Deauth completado', 'success');
+            }).catch(error => {
+                console.error('Deauth attack failed:', error);
+                document.getElementById('btnDeauth').style.display = 'inline-block';
+                document.getElementById('btnStopDeauth').style.display = 'none';
+                document.getElementById('deauthStatus').textContent = '❌ Error';
             });
 
-            if (result.success) {
-                this.activeAttack = 'deauth';
-                this.startStatusMonitoring();
-                this.showNotification('✅ Ataque Deauth iniciado', 'success');
-            }
         } catch (error) {
             console.error('Deauth attack failed:', error);
+            document.getElementById('btnDeauth').style.display = 'inline-block';
+            document.getElementById('btnStopDeauth').style.display = 'none';
+            document.getElementById('deauthStatus').textContent = '❌ Error';
+        }
+    }
+
+    async stopDeauthAttack() {
+        try {
+            await this.callMCP('self.wifi_pentest.stop_attack');
+            document.getElementById('btnDeauth').style.display = 'inline-block';
+            document.getElementById('btnStopDeauth').style.display = 'none';
+            document.getElementById('deauthStatus').textContent = '⏹️ Detenido';
+            this.showNotification('⏹️ Ataque Deauth detenido', 'info');
+        } catch (error) {
+            console.error('Stop attack failed:', error);
         }
     }
 
@@ -344,22 +375,48 @@ class OperationsPanel {
             return;
         }
 
+        // Show stop button, hide execute button
+        document.getElementById('btnRogue').style.display = 'none';
+        document.getElementById('btnStopRogue').style.display = 'inline-block';
+        document.getElementById('rogueStatus').textContent = '⏳ Ejecutando...';
+
         try {
             this.showNotification('📡 Iniciando Rogue AP...', 'info');
-            const result = await this.callMCP('self.wifi_pentest.rogue_ap', {
+
+            this.callMCP('self.wifi_pentest.rogue_ap', {
                 target_bssid: bssid,
                 target_ssid: ssid,
                 channel: channel,
                 duration_seconds: 60
+            }).then(result => {
+                document.getElementById('btnRogue').style.display = 'inline-block';
+                document.getElementById('btnStopRogue').style.display = 'none';
+                document.getElementById('rogueStatus').textContent = `✅ Completado`;
+                this.showNotification('✅ Rogue AP completado', 'success');
+            }).catch(error => {
+                console.error('Rogue AP failed:', error);
+                document.getElementById('btnRogue').style.display = 'inline-block';
+                document.getElementById('btnStopRogue').style.display = 'none';
+                document.getElementById('rogueStatus').textContent = '❌ Error';
             });
 
-            if (result.success) {
-                this.activeAttack = 'rogue_ap';
-                this.startStatusMonitoring();
-                this.showNotification('✅ Rogue AP iniciado', 'success');
-            }
         } catch (error) {
             console.error('Rogue AP failed:', error);
+            document.getElementById('btnRogue').style.display = 'inline-block';
+            document.getElementById('btnStopRogue').style.display = 'none';
+            document.getElementById('rogueStatus').textContent = '❌ Error';
+        }
+    }
+
+    async stopRogueAP() {
+        try {
+            await this.callMCP('self.wifi_pentest.stop_attack');
+            document.getElementById('btnRogue').style.display = 'inline-block';
+            document.getElementById('btnStopRogue').style.display = 'none';
+            document.getElementById('rogueStatus').textContent = '⏹️ Detenido';
+            this.showNotification('⏹️ Rogue AP detenido', 'info');
+        } catch (error) {
+            console.error('Stop attack failed:', error);
         }
     }
 
@@ -372,21 +429,48 @@ class OperationsPanel {
             return;
         }
 
+        // Show stop button, hide execute button
+        document.getElementById('btnPMKID').style.display = 'none';
+        document.getElementById('btnStopPMKID').style.display = 'inline-block';
+        document.getElementById('pmkidStatus').textContent = '⏳ Ejecutando...';
+
         try {
             this.showNotification('🔑 Iniciando captura PMKID...', 'info');
-            const result = await this.callMCP('self.wifi_pentest.pmkid_capture', {
+
+            this.callMCP('self.wifi_pentest.pmkid_capture', {
                 target_bssid: bssid,
                 channel: channel,
                 duration_seconds: 120
+            }).then(result => {
+                document.getElementById('btnPMKID').style.display = 'inline-block';
+                document.getElementById('btnStopPMKID').style.display = 'none';
+                const status = result.pmkid_captured ? '✅ PMKID capturado!' : '⚠️ Sin PMKID';
+                document.getElementById('pmkidStatus').textContent = status;
+                this.showNotification(status, result.pmkid_captured ? 'success' : 'warning');
+            }).catch(error => {
+                console.error('PMKID capture failed:', error);
+                document.getElementById('btnPMKID').style.display = 'inline-block';
+                document.getElementById('btnStopPMKID').style.display = 'none';
+                document.getElementById('pmkidStatus').textContent = '❌ Error';
             });
 
-            if (result.success) {
-                this.activeAttack = 'pmkid';
-                this.startStatusMonitoring();
-                this.showNotification('✅ Captura PMKID iniciada', 'success');
-            }
         } catch (error) {
             console.error('PMKID capture failed:', error);
+            document.getElementById('btnPMKID').style.display = 'inline-block';
+            document.getElementById('btnStopPMKID').style.display = 'none';
+            document.getElementById('pmkidStatus').textContent = '❌ Error';
+        }
+    }
+
+    async stopPMKIDCapture() {
+        try {
+            await this.callMCP('self.wifi_pentest.stop_attack');
+            document.getElementById('btnPMKID').style.display = 'inline-block';
+            document.getElementById('btnStopPMKID').style.display = 'none';
+            document.getElementById('pmkidStatus').textContent = '⏹️ Detenido';
+            this.showNotification('⏹️ Captura PMKID detenida', 'info');
+        } catch (error) {
+            console.error('Stop attack failed:', error);
         }
     }
 
@@ -398,20 +482,46 @@ class OperationsPanel {
             return;
         }
 
+        // Show stop button, hide execute button
+        document.getElementById('btnDoS').style.display = 'none';
+        document.getElementById('btnStopDoS').style.display = 'inline-block';
+        document.getElementById('dosStatus').textContent = '⏳ Ejecutando...';
+
         try {
             this.showNotification('💣 Iniciando ataque DoS...', 'info');
-            const result = await this.callMCP('self.wifi_pentest.dos_attack', {
+
+            this.callMCP('self.wifi_pentest.dos_attack', {
                 target_bssid: bssid,
                 duration_seconds: 60
+            }).then(result => {
+                document.getElementById('btnDoS').style.display = 'inline-block';
+                document.getElementById('btnStopDoS').style.display = 'none';
+                document.getElementById('dosStatus').textContent = `✅ Completado: ${result.frames_sent || 0} frames`;
+                this.showNotification('✅ Ataque DoS completado', 'success');
+            }).catch(error => {
+                console.error('DoS attack failed:', error);
+                document.getElementById('btnDoS').style.display = 'inline-block';
+                document.getElementById('btnStopDoS').style.display = 'none';
+                document.getElementById('dosStatus').textContent = '❌ Error';
             });
 
-            if (result.success) {
-                this.activeAttack = 'dos';
-                this.startStatusMonitoring();
-                this.showNotification('✅ Ataque DoS iniciado', 'success');
-            }
         } catch (error) {
             console.error('DoS attack failed:', error);
+            document.getElementById('btnDoS').style.display = 'inline-block';
+            document.getElementById('btnStopDoS').style.display = 'none';
+            document.getElementById('dosStatus').textContent = '❌ Error';
+        }
+    }
+
+    async stopDoSAttack() {
+        try {
+            await this.callMCP('self.wifi_pentest.stop_attack');
+            document.getElementById('btnDoS').style.display = 'inline-block';
+            document.getElementById('btnStopDoS').style.display = 'none';
+            document.getElementById('dosStatus').textContent = '⏹️ Detenido';
+            this.showNotification('⏹️ Ataque DoS detenido', 'info');
+        } catch (error) {
+            console.error('Stop attack failed:', error);
         }
     }
 
@@ -625,7 +735,23 @@ class UIRenderer {
 
     renderEmotion(emotion) {
         if (this.elements.emotionDisplay) {
-            this.elements.emotionDisplay.textContent = emotion;
+            // Map emotion names to emojis
+            const emotionMap = {
+                'neutral': '😐',
+                'happy': '😊',
+                'sad': '😢',
+                'angry': '😠',
+                'surprised': '😮',
+                'thinking': '🤔',
+                'sleeping': '😴',
+                'excited': '🤩',
+                'love': '😍',
+                'cool': '😎'
+            };
+
+            // If emotion is already an emoji (not in map), use it directly
+            const emoji = emotionMap[emotion.toLowerCase()] || emotion;
+            this.elements.emotionDisplay.textContent = emoji;
         }
     }
 
